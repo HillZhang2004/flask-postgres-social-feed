@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Social Feed</title>
+  <style>
+    body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    nav { border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    nav a { margin-right: 1rem; text-decoration: none; color: #333; }
+    nav a:hover { text-decoration: underline; }
+    .message { border-bottom: 1px solid #eee; padding: 0.75rem 0; }
+    .message .meta { font-size: 0.85rem; color: #666; margin-bottom: 0.25rem; }
+    .pagination { margin-top: 1.5rem; }
+    .pagination a { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/search">Search</a>
+    {% if logged_in %}
+      <a href="/create_message">New Message</a>
+      <a href="/logout">Logout</a>
+    {% else %}
+      <a href="/login">Login</a>
+      <a href="/create_account">Create Account</a>
+    {% endif %}
+  </nav>
+
+  {% block content %}{% endblock %}
+</body>
+</html>

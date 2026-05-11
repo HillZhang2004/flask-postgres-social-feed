@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Recent Messages</h1>
+
+{% if messages %}
+  {% for msg in messages %}
+    <div class="message">
+      <div class="meta">
+        <strong>{{ msg.username }}</strong>
+        &mdash;
+        {{ msg.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
+      </div>
+      <div>{{ msg.body }}</div>
+    </div>
+  {% endfor %}
+
+  <div class="pagination">
+    {% if has_prev %}
+      <a href="/?page={{ page - 1 }}">&larr; Newer</a>
+    {% endif %}
+    {% if has_next %}
+      <a href="/?page={{ page + 1 }}">Older &rarr;</a>
+    {% endif %}
+  </div>
+{% else %}
+  <p>No messages yet.</p>
+{% endif %}
+
+{% endblock %}
