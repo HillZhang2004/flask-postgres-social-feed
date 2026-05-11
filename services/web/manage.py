@@ -7,9 +7,7 @@ cli = FlaskGroup(app)
 
 @cli.command("create_db")
 def create_db():
-    db.drop_all()
-    db.create_all()
-    db.session.commit()
+    print("Schema is managed by services/postgres/schema.sql — no action taken.")
 
 
 if __name__ == "__main__":
