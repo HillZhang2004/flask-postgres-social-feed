@@ -10,14 +10,8 @@
 -- Keep pg_trgm; it may be used later for spelling suggestions.
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- RUM extension is NOT enabled here.
--- RUM provides faster tsvector ranking than GIN but requires a custom Postgres
--- image that ships the rum extension. To enable it later:
---   1. Switch the image in docker-compose*.yml to one that supports RUM.
---   2. Add: CREATE EXTENSION IF NOT EXISTS rum;
---   3. Replace the GIN index below with:
---        CREATE INDEX idx_messages_rum ON messages USING rum (tsv rum_tsvector_ops);
--- Until then, GIN with ts_rank is used for full-text search.
+-- rum is installed via services/postgres/Dockerfile (postgresql-13-rum package).
+CREATE EXTENSION IF NOT EXISTS rum;
 
 -- ---------------------------------------------------------------------------
 -- Tables
@@ -68,10 +62,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_created_at_id
 CREATE INDEX IF NOT EXISTS idx_messages_user_id
     ON messages (user_id);
 
--- GIN index on the generated tsvector column for full-text search.
--- Replace with a RUM index once the image supports it.
-CREATE INDEX IF NOT EXISTS idx_messages_tsv
-    ON messages USING GIN (tsv);
+-- RUM index on the generated tsvector column for ranked full-text search.
+-- Requires the postgresql-13-rum package installed in services/postgres/Dockerfile.
+CREATE INDEX IF NOT EXISTS idx_messages_rum
+    ON messages USING rum (tsv rum_tsvector_ops);
 
 -- Fast reverse-follow lookups.
 CREATE INDEX IF NOT EXISTS idx_follows_followed_id
