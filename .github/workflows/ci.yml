@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, build-final-project ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -25,12 +25,22 @@ jobs:
         run: |
           docker compose up -d --build
 
-      - name: Wait for app to start
-        run: sleep 10
+      - name: Wait for app to be ready
+        run: |
+          timeout 60 bash -c 'until curl -sf http://localhost:8765/; do sleep 2; done'
 
-      - name: Verify homepage responds
+      - name: Verify homepage returns HTTP 200
         run: |
           curl --fail http://localhost:8765/
+
+      - name: Verify schema and RUM extension
+        run: |
+          docker compose exec -T db psql -U hello_flask -d hello_flask_dev -tA \
+            -c "SELECT COUNT(*) FROM pg_extension WHERE extname = 'rum';" | grep -qx 1
+          docker compose exec -T db psql -U hello_flask -d hello_flask_dev -tA \
+            -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('users','messages','credentials','follows');" | grep -qx 4
+          docker compose exec -T db psql -U hello_flask -d hello_flask_dev -tA \
+            -c "SELECT COUNT(*) FROM pg_indexes WHERE tablename='messages' AND indexname='idx_messages_rum' AND indexdef LIKE '%USING rum%';" | grep -qx 1
 
       - name: Show container status on failure
         if: failure()
@@ -41,4 +51,4 @@ jobs:
       - name: Tear down stack
         if: always()
         run: |
-          docker compose down -v
+          docker compose down
