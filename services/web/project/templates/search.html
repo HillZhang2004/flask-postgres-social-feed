@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Search</h1>
+
+<form method="get">
+  <p>
+    <input type="text" name="q" value="{{ q }}" placeholder="Search messages..." size="40" autofocus>
+    <button type="submit">Search</button>
+  </p>
+</form>
+
+{% if q %}
+  {% if results %}
+    <p>Results for <strong>{{ q }}</strong>:</p>
+    {% for r in results %}
+      <div class="message">
+        <div class="meta">
+          <strong>{{ r.username }}</strong>
+          &mdash;
+          {{ r.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
+        </div>
+        <div>{{ r.headline }}</div>
+      </div>
+    {% endfor %}
+
+    <div class="pagination">
+      {% if has_prev %}
+        <a href="/search?q={{ q | urlencode }}&page={{ page - 1 }}">&larr; Previous</a>
+      {% endif %}
+      {% if has_next %}
+        <a href="/search?q={{ q | urlencode }}&page={{ page + 1 }}">Next &rarr;</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <p>No results found for <strong>{{ q }}</strong>.</p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

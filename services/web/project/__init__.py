@@ -1,6 +1,8 @@
+import html as _html
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from markupsafe import Markup
 
 from flask import (
     Flask, flash, redirect, render_template,
@@ -15,6 +17,17 @@ app.config.from_object("project.config.Config")
 db = SQLAlchemy(app)
 
 PER_PAGE = 20
+
+_HL_OPTIONS = "StartSel=__HL_START__, StopSel=__HL_END__, HighlightAll=true"
+
+
+def _apply_highlight(raw):
+    escaped = _html.escape(raw)
+    return Markup(
+        escaped
+        .replace("__HL_START__", "<mark>")
+        .replace("__HL_END__", "</mark>")
+    )
 
 
 def get_db_conn():
@@ -183,6 +196,70 @@ def create_message():
             return redirect(url_for("index"))
 
     return render_template("create_message.html", error=error)
+
+
+@app.route("/search")
+def search():
+    q = request.args.get("q", "").strip()
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    offset = (page - 1) * PER_PAGE
+
+    results = []
+    total = 0
+
+    if q:
+        with get_db_conn() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        m.message_id,
+                        u.username,
+                        m.created_at,
+                        ts_rank(m.tsv, websearch_to_tsquery('english', %s)) AS rank,
+                        ts_headline(
+                            'english', m.body,
+                            websearch_to_tsquery('english', %s),
+                            %s
+                        ) AS headline
+                    FROM messages m
+                    JOIN users u ON u.user_id = m.user_id
+                    WHERE m.tsv @@ websearch_to_tsquery('english', %s)
+                    ORDER BY rank DESC, m.message_id DESC
+                    LIMIT %s OFFSET %s
+                    """,
+                    (q, q, _HL_OPTIONS, q, PER_PAGE, offset),
+                )
+                rows = cur.fetchall()
+
+                cur.execute(
+                    """
+                    SELECT COUNT(*) AS total
+                    FROM messages
+                    WHERE tsv @@ websearch_to_tsquery('english', %s)
+                    """,
+                    (q,),
+                )
+                total = cur.fetchone()["total"]
+
+        results = [
+            {**row, "headline": _apply_highlight(row["headline"])}
+            for row in rows
+        ]
+
+    has_prev = page > 1
+    has_next = (offset + PER_PAGE) < total
+
+    return render_template(
+        "search.html",
+        q=q,
+        results=results,
+        page=page,
+        has_prev=has_prev,
+        has_next=has_next,
+    )
 
 
 @app.route("/static/<path:filename>")
