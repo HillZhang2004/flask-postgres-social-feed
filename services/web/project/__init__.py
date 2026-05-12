@@ -163,6 +163,28 @@ def logout():
     return redirect(url_for("index"))
 
 
+@app.route("/create_message", methods=["GET", "POST"])
+def create_message():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    error = None
+    if request.method == "POST":
+        body = request.form.get("body", "").strip()
+        if not body:
+            error = "Message cannot be blank."
+        else:
+            with get_db_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO messages (user_id, body) VALUES (%s, %s)",
+                        (session["user_id"], body),
+                    )
+            return redirect(url_for("index"))
+
+    return render_template("create_message.html", error=error)
+
+
 @app.route("/static/<path:filename>")
 def staticfiles(filename):
     return send_from_directory(app.config["STATIC_FOLDER"], filename)
