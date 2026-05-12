@@ -87,7 +87,7 @@ def create_account():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        confirm  = request.form.get("confirm", "")
+        confirm = request.form.get("confirm", "")
 
         if not username:
             error = "Username is required."
