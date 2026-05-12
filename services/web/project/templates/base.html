@@ -13,6 +13,9 @@
     .message .meta { font-size: 0.85rem; color: #666; margin-bottom: 0.25rem; }
     .pagination { margin-top: 1.5rem; }
     .pagination a { margin-right: 1rem; }
+    .error { color: #c00; margin-bottom: 1rem; }
+    .flash { padding: 0.5rem 0.75rem; margin-bottom: 1rem; border: 1px solid #aaa; }
+    .flash.success { border-color: #4a4; color: #2a2; }
   </style>
 </head>
 <body>
@@ -27,6 +30,12 @@
       <a href="/create_account">Create Account</a>
     {% endif %}
   </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
 
   {% block content %}{% endblock %}
 </body>
